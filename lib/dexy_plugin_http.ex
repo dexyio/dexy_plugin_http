@@ -64,6 +64,18 @@ defmodule DexyPluginHTTP do
     end
   end
 
+  def response state = %{args: []} do do_response state, data! state end
+  def response state = %{args: [body]} do do_response state, body end
+
+  defp do_response state = %{opts: opts}, body do
+    data = %{
+      "code" => opts["code"] || 200,
+      "body" => body || "",
+      "header" => opts["header"] || opts["headers"] 
+    }
+    {state, data}
+  end
+
   defp data! %{amppy: map} do
     Lib.Mappy.val map, "data", nil
   end
