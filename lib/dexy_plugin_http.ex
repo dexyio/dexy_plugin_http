@@ -77,7 +77,7 @@ defmodule DexyPluginHTTP do
   end
 
   defp data! %{mappy: map} do
-    Lib.Mappy.val map, "data", nil
+    Lib.Mappy.val map, "data"
   end
 
 end
