@@ -3,12 +3,22 @@ defmodule DexyPluginHTTPTest do
   alias DexyPluginHTTP, as: HTTP
   doctest DexyPluginHTTP
 
+  @test_url "http://www.dexy.io/echo"
+  @opts %{"timeout" => 10_000, "body" => "hello", "params" => %{"foo"=>"bar"}}
+
   test "get" do
-    assert {_state, %{"code"=>200}} = HTTP.get(%{args: ["http://www.example.com"], opts: %{}})
+    state = %{fun: "http.get", args: [@test_url], opts: @opts}
+    assert {_state, %{"code"=>200}} = HTTP.on_call(state)
+  end
+
+  test "put" do
+    state = %{fun: "http.put", args: [@test_url], opts: @opts}
+    assert {_state, %{"code"=>200}} = HTTP.on_call(state)
   end
 
   test "post" do
-    assert {_state, %{"code"=>200}} = HTTP.post(%{args: ["http://www.example.com"], opts: %{}})
+    state = %{fun: "http.post", args: [@test_url], opts: @opts}
+    assert {_state, %{"code"=>200}} = HTTP.on_call(state)
   end
 
   test "response" do
