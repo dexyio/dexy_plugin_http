@@ -13,42 +13,28 @@ defmodule DexyPluginHTTP.Adapters.Gun do
   @app :dexy_plugin_kv
   @behaviour DexyPluginHTTP.Adapter
   @regex_url ~r"(https?):\/\/(.+?)(?::([0-9]+))?(?:(\/+.+?)\/*)?(?:\?(.*?))?[\/\?\s]*$"iu
-  @default_conn_timeout 60_000
-  @default_recv_timeout 60_000
-  @conn_timeout Application.get_env(@app, :conn_timeout) || @default_conn_timeout
-  @recv_timeout Application.get_env(@app, :recv_timeout) || @default_recv_timeout
-
-  def request req = %Request{} do
-    IO.inspect req: req
+  
+  def request req = %Request{options: options} do
     url = %URL{host: host, port: port} = req.url |> inspect_url!
+    IO.inspect req: req, url: url
     with \
-      {:ok, {conn, _proto}} <- open_sync(host, port),
+      {:ok, {conn, _proto}} <- open_sync(host, port, options),
       stream_ref = do_request(conn, req, url),
-      {:ok, res} <- await_response(conn, stream_ref),
+      {:ok, res} <- await_response(conn, stream_ref, options),
       :ok <- close_gracefully conn
     do {:ok, res} else
       {:error, _error} = err -> err
     end
   end
 
-  defp do_request conn, req, url = %URL{path: path, query: query} do
+  defp do_request conn, req, _url = %URL{path: path, query: query} do
     path_query = case req.params do
       nil -> path <> "?" <> query
       params -> path <> "?" <> (URI.encode_query params) <> query
     end
-    IO.inspect path: path, query: query, query: path_query
-    :gun.request conn, req.method, path_query, Enum.to_list(req.header), req.body
-  end
 
-  defp await_response conn, stream_ref do
-    case :gun.await(conn, stream_ref, @recv_timeout) do
-      {:response, :fin, status, headers} ->
-        {status, headers, ""}
-      {:response, :nofin, status, headers} ->
-        {:ok, body} = :gun.await_body(conn, stream_ref)
-        {status, headers, body}
-    end
-    |> makeup_response
+    IO.inspect path: path, query: query, path_query: path_query
+    :gun.request conn, req.method, path_query, Enum.to_list(req.header), req.body
   end
 
   defp makeup_response {status, headers, body} do
@@ -59,15 +45,31 @@ defmodule DexyPluginHTTP.Adapters.Gun do
     }}
   end
 
-  @spec open_sync(list, pos_integer) :: {:ok, {pid, term}} | {:error, term}
+  @default_conn_timeout 60_000
+  @spec open_sync(list, pos_integer, Keyword.t) :: {:ok, {pid, term}} | {:error, term}
 
-  defp open_sync host, port, timeout \\ @conn_timeout do
+  defp open_sync host, port, options \\ [] do
+    conn_timeout = options[:conn_timeout] || @default_conn_timeout
     case :gun.open(host, port) do
-      {:ok, pid} -> case :gun.await_up(pid, timeout) do
+      {:ok, pid} -> case :gun.await_up(pid, conn_timeout) do
         {:ok, proto} -> {:ok, {pid, proto}}
         {:error, _reason} = err -> close_gracefully pid; err
       end
     end
+  end
+
+  @default_recv_timeout 60_000
+
+  defp await_response conn, stream_ref, options \\ []  do
+    recv_timeout= options[:recv_timeout] || @default_recv_timeout
+    case :gun.await(conn, stream_ref, recv_timeout) do
+      {:response, :fin, status, headers} ->
+        {status, headers, ""}
+      {:response, :nofin, status, headers} ->
+        {:ok, body} = :gun.await_body(conn, stream_ref)
+        {status, headers, body}
+    end
+    |> makeup_response
   end
 
   @spec close(pid) :: :ok | {:error, :not_found}
@@ -97,7 +99,7 @@ defmodule DexyPluginHTTP.Adapters.Gun do
     %URL{
       host: host |> String.to_charlist,
       port: inspect_port!(port, proto),
-      path: path |> URI.encode,
+      path: path == "" && "/" || URI.encode(path),
       query: query |> URI.encode
     }
   end

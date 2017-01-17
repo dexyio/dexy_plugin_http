@@ -7,12 +7,13 @@ defmodule DexyPluginHTTP.Adapters.HTTPoison do
   @behaviour DexyPluginHTTP.Adapter
 
   def request req = %Request{} do
+    options = [{:params, req.params || []} | (req.options || [])] 
     request(
       method(req.method),
       req.url,
       req.body || "",
       (req.header || []) |> Enum.to_list,
-      req.options || []
+      options
     ) |> case do
       {:ok, res} -> {:ok, response res}
       {:error, res} -> {:error, response res}

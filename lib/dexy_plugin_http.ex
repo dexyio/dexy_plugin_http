@@ -5,10 +5,23 @@ defmodule DexyPluginHTTP do
   @app :dexy_plugin_kv
   @adapter Application.get_env(@app, __MODULE__)[:adapter]
     || (
-      Logger.warn(
-      "adapter not configured, default: #{__MODULE__.Adapters.Gun}");
+      Logger.warn("adapter not configured, default: #{__MODULE__.Adapters.Gun}");
       __MODULE__.Adapters.Gun
     )
+
+  @default_conn_timeout 60_000
+  @default_recv_timeout 60_000
+  @conn_timeout Application.get_env(@app, __MODULE__)[:conn_timeout]
+    || (
+      Logger.warn "conn_timeout not configured, default: #{@default_conn_timeout}";
+      @default_conn_timeout
+    )
+  @recv_timeout Application.get_env(@app, __MODULE__)[:recv_timeout]
+    || (
+      Logger.warn "recv_timeout not configured, default: #{@default_recv_timeout}";
+      @default_recv_timeout
+    )
+
 
   defmodule Request do
     @type url :: bitstring
@@ -64,22 +77,21 @@ defmodule DexyPluginHTTP do
     %Request{
       url: url,
       method: method,
-      body: opts["body"],
+      body: opts["body"] || "",
       header: opts["header"] || %{}, 
       params: opts["params"],
       options: req_options(opts, state)
     }
   end
 
-  @default_timeout 5_000
   defp req_options opts, state do
-    (timeout = opts["timeout"] || @default_timeout) && (timeout > 0 and timeout <= 60_000)
+    (timeout = opts["timeout"] || @recv_timeout) && (timeout > 0 and timeout <= 60_000)
       || raise Error.InvalidOptions, reason: %{timeout: timeout}, state: state
     (qs_params = opts["params"] || %{}) && is_map(qs_params)
       || raise Error.InvalidOptions, reason: %{params: qs_params}, state: state
     [
-      recv_timeout: timeout,
-      params: qs_params 
+      conn_timeout: @conn_timeout,
+      recv_timeout: timeout
     ]
   end
 

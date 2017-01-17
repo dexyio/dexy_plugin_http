@@ -30,20 +30,30 @@ defmodule DexyPluginHTTPTest do
   end
 
   test "gun -> inspect_url!" do
-    HTTP.Adapters.Gun.inspect_url!("http://www.exampl.com") |> IO.inspect
-    HTTP.Adapters.Gun.inspect_url!("http://www.exampl.com/") |> IO.inspect
-    HTTP.Adapters.Gun.inspect_url!("http://www.exampl.com:8080") |> IO.inspect
-    HTTP.Adapters.Gun.inspect_url!("http://www.exampl.com:8080/") |> IO.inspect
-    HTTP.Adapters.Gun.inspect_url!("https://www.exampl.com/a/b/c") |> IO.inspect
-    HTTP.Adapters.Gun.inspect_url!("https://www.exampl.com:8888/a/b/c") |> IO.inspect
+    alias DexyPluginHTTP.Adapters.Gun
+    assert %Gun.URL{host: 'www.exampl.com', path: "/", port: 80, query: ""}
+      == Gun.inspect_url!("http://www.exampl.com")
+
+    assert %Gun.URL{host: 'www.exampl.com', path: "/", port: 80, query: ""}
+      == Gun.inspect_url!("http://www.exampl.com/")
+
+    assert %Gun.URL{host: 'www.exampl.com', path: "/", port: 8080, query: ""}
+      == Gun.inspect_url!("http://www.exampl.com:8080") 
+
+    assert %Gun.URL{host: 'www.exampl.com', path: "/", port: 8080, query: ""}
+      == Gun.inspect_url!("http://www.exampl.com:8080/")
+
+    assert %Gun.URL{host: 'www.exampl.com', path: "/a/b/c", port: 443, query: ""}
+      == Gun.inspect_url!("https://www.exampl.com/a/b/c") 
+
+    assert %Gun.URL{host: 'www.exampl.com', path: "/a/b/c", port: 8888, query: ""}
+      == HTTP.Adapters.Gun.inspect_url!("https://www.exampl.com:8888/a/b/c") 
   end
 
   test "gun -> request" do
     req = %HTTP.Request{
-      method: "put",
-      url: "https://www.dexy.io/echo2/안녕하세요!",
-      params: %{"foo"=>"bar", "body"=>"반갑습니다"},
-      body: "Welcome to 한국"
+      method: "GET",
+      url: "http://www.example.com",
     }
     res = HTTP.Adapters.Gun.request req
     IO.inspect res: res
