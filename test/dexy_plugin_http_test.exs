@@ -52,7 +52,7 @@ defmodule DexyPluginHTTPTest do
 
   test "gun -> request" do
     req = %HTTP.Request{
-      method: "GET",
+      method: "get",
       url: "http://www.example.com",
     }
     res = HTTP.Adapters.Gun.request req

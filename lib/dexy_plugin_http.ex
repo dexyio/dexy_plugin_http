@@ -76,7 +76,7 @@ defmodule DexyPluginHTTP do
   defp req_struct url, method, state = %{opts: opts} do
     %Request{
       url: url,
-      method: method,
+      method: method |> String.upcase,
       body: opts["body"] || "",
       header: opts["header"] || %{}, 
       params: opts["params"],

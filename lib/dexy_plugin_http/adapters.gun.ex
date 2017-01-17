@@ -32,9 +32,9 @@ defmodule DexyPluginHTTP.Adapters.Gun do
       nil -> path <> "?" <> query
       params -> path <> "?" <> (URI.encode_query params) <> query
     end
-
-    IO.inspect path: path, query: query, path_query: path_query
-    :gun.request conn, req.method, path_query, Enum.to_list(req.header), req.body
+    headers = req.header |> Enum.to_list
+    body = req.body || ""
+    :gun.request conn, req.method, path_query, headers, body
   end
 
   defp makeup_response {status, headers, body} do
@@ -48,7 +48,7 @@ defmodule DexyPluginHTTP.Adapters.Gun do
   @default_conn_timeout 60_000
   @spec open_sync(list, pos_integer, Keyword.t) :: {:ok, {pid, term}} | {:error, term}
 
-  defp open_sync host, port, options \\ [] do
+  defp open_sync host, port, options do
     conn_timeout = options[:conn_timeout] || @default_conn_timeout
     case :gun.open(host, port) do
       {:ok, pid} -> case :gun.await_up(pid, conn_timeout) do
@@ -60,7 +60,7 @@ defmodule DexyPluginHTTP.Adapters.Gun do
 
   @default_recv_timeout 60_000
 
-  defp await_response conn, stream_ref, options \\ []  do
+  defp await_response(conn, stream_ref, options)  do
     recv_timeout= options[:recv_timeout] || @default_recv_timeout
     case :gun.await(conn, stream_ref, recv_timeout) do
       {:response, :fin, status, headers} ->
@@ -70,12 +70,6 @@ defmodule DexyPluginHTTP.Adapters.Gun do
         {status, headers, body}
     end
     |> makeup_response
-  end
-
-  @spec close(pid) :: :ok | {:error, :not_found}
-
-  defp close conn_pid do
-    :gun.close conn_pid
   end
 
   @spec close_gracefully(pid) :: :ok | {:error, :not_found}
