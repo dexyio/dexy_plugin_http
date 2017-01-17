@@ -26,4 +26,24 @@ defmodule DexyPluginHTTPTest do
     assert res == %{"code" => 201, "body" => "foo", "header" => nil}
   end
 
+  test "gun -> inspect_url!" do
+    HTTP.Adapters.Gun.inspect_url!("http://www.exampl.com") |> IO.inspect
+    HTTP.Adapters.Gun.inspect_url!("http://www.exampl.com/") |> IO.inspect
+    HTTP.Adapters.Gun.inspect_url!("http://www.exampl.com:8080") |> IO.inspect
+    HTTP.Adapters.Gun.inspect_url!("http://www.exampl.com:8080/") |> IO.inspect
+    HTTP.Adapters.Gun.inspect_url!("https://www.exampl.com/a/b/c") |> IO.inspect
+    HTTP.Adapters.Gun.inspect_url!("https://www.exampl.com:8888/a/b/c") |> IO.inspect
+  end
+
+  test "gun -> request" do
+    req = %HTTP.Request{
+      method: "put",
+      url: "https://www.dexy.io/echo2/안녕하세요!",
+      params: %{"foo"=>"bar", "body"=>"반갑습니다"},
+      body: "Welcome to 한국"
+    }
+    res = HTTP.Adapters.Gun.request req
+    IO.inspect res: res
+  end
+
 end

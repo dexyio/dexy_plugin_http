@@ -2,7 +2,9 @@ defmodule DexyPluginHTTP do
 
   @app :dexy_plugin_kv
   @adapter Application.get_env(@app, __MODULE__)[:adapter]
-    || __MODULE__.Adapters.HTTPoison
+    || Logger.warn(
+      "adapter not configured, default: #{__MODULE__.Adapters.HTTPoison}");
+      __MODULE__.Adapters.HTTPoison
 
   defmodule Request do
     @type url :: bitstring
@@ -15,6 +17,7 @@ defmodule DexyPluginHTTP do
               body: "",
               method: "",
               header: [],
+              params: nil,
               options: []
   end
 
@@ -59,6 +62,7 @@ defmodule DexyPluginHTTP do
       method: method,
       body: opts["body"],
       header: opts["header"], 
+      params: opts["params"],
       options: req_options(opts, state)
     }
   end

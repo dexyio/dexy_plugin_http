@@ -30,11 +30,13 @@ defmodule DexyPluginHTTP.Adapters.HTTPoison do
   defp do_method _ do :get end
 
   defp response res = %HTTPoison.Response{} do
-    %{
+    res = %{
       "code" => res.status_code,
       "body" => res.body,
       "header" => res.headers |> Enum.into(%{})
     }
+    IO.inspect res
+    res
   end
 
   defp response _res = %HTTPoison.Error{reason: reason} do
