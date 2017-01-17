@@ -8,17 +8,20 @@ defmodule DexyPluginHTTPTest do
 
   test "get" do
     state = %{fun: "http.get", args: [@test_url], opts: @opts}
-    assert {_state, %{"code"=>200}} = HTTP.on_call(state)
+    assert {_state, %{"code"=>code}} = HTTP.on_call(state)
+    IO.inspect code: code
   end
 
   test "put" do
     state = %{fun: "http.put", args: [@test_url], opts: @opts}
-    assert {_state, %{"code"=>200}} = HTTP.on_call(state)
+    assert {_state, %{"code"=>code}} = HTTP.on_call(state)
+    IO.inspect code: code
   end
 
   test "post" do
     state = %{fun: "http.post", args: [@test_url], opts: @opts}
-    assert {_state, %{"code"=>200}} = HTTP.on_call(state)
+    assert {_state, %{"code"=>code}} = HTTP.on_call(state)
+    IO.inspect code: code
   end
 
   test "response" do

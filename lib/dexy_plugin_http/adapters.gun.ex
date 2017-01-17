@@ -19,6 +19,7 @@ defmodule DexyPluginHTTP.Adapters.Gun do
   @recv_timeout Application.get_env(@app, :recv_timeout) || @default_recv_timeout
 
   def request req = %Request{} do
+    IO.inspect req: req
     url = %URL{host: host, port: port} = req.url |> inspect_url!
     with \
       {:ok, {conn, _proto}} <- open_sync(host, port),
@@ -42,12 +43,20 @@ defmodule DexyPluginHTTP.Adapters.Gun do
   defp await_response conn, stream_ref do
     case :gun.await(conn, stream_ref, @recv_timeout) do
       {:response, :fin, status, headers} ->
-        {:ok, {status, Enum.into(headers, %{}), ""}}
+        {status, headers, ""}
       {:response, :nofin, status, headers} ->
         {:ok, body} = :gun.await_body(conn, stream_ref)
-        IO.inspect body: body
-        {:ok, {status, Enum.into(headers, %{}), body}}
+        {status, headers, body}
     end
+    |> makeup_response
+  end
+
+  defp makeup_response {status, headers, body} do
+    {:ok, %{
+      "code" => status,
+      "header" => headers |> Enum.into(%{}),
+      "body" => body
+    }}
   end
 
   @spec open_sync(list, pos_integer) :: {:ok, {pid, term}} | {:error, term}
