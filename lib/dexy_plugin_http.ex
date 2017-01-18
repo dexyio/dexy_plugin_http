@@ -85,13 +85,13 @@ defmodule DexyPluginHTTP do
   end
 
   defp req_options opts, state do
-    (timeout = opts["timeout"] || @recv_timeout) && (timeout > 0 and timeout <= 60_000)
+    (timeout = opts["timeout"] || @conn_timeout) && (timeout > 0 and timeout <= 60_000)
       || raise Error.InvalidOptions, reason: %{timeout: timeout}, state: state
     (qs_params = opts["params"] || %{}) && is_map(qs_params)
       || raise Error.InvalidOptions, reason: %{params: qs_params}, state: state
     [
-      conn_timeout: @conn_timeout,
-      recv_timeout: timeout
+      conn_timeout: timeout,
+      recv_timeout: @recv_timeout
     ]
   end
 
