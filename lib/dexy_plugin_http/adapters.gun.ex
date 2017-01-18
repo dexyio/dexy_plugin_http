@@ -2,6 +2,7 @@ defmodule DexyPluginHTTP.Adapters.Gun do
 
   use DexyLib, as: Lib
   alias DexyPluginHTTP.Request
+  require Logger
 
   defmodule URL do
     defstruct host: nil,
@@ -53,7 +54,7 @@ defmodule DexyPluginHTTP.Adapters.Gun do
     case :gun.open(host, port) do
       {:ok, pid} -> case :gun.await_up(pid, conn_timeout) do
         {:ok, proto} -> {:ok, {pid, proto}}
-        {:error, _reason} = err -> close_gracefully pid; err
+        {:error, _reason} = error -> close_gracefully pid; error
       end
     end
   end

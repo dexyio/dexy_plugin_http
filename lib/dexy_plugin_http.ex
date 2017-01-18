@@ -3,24 +3,21 @@ defmodule DexyPluginHTTP do
   require Logger
 
   @app :dexy_plugin_kv
-  @adapter Application.get_env(@app, __MODULE__)[:adapter]
-    || (
-      Logger.warn("adapter not configured, default: #{__MODULE__.Adapters.Gun}");
-      __MODULE__.Adapters.Gun
-    )
+  @adapter Application.get_env(@app, __MODULE__)[:adapter] || (
+    Logger.warn("adapter not configured, default: #{__MODULE__.Adapters.Gun}");
+    __MODULE__.Adapters.Gun
+  )
 
   @default_conn_timeout 60_000
   @default_recv_timeout 60_000
-  @conn_timeout Application.get_env(@app, __MODULE__)[:conn_timeout]
-    || (
-      Logger.warn "conn_timeout not configured, default: #{@default_conn_timeout}";
-      @default_conn_timeout
-    )
-  @recv_timeout Application.get_env(@app, __MODULE__)[:recv_timeout]
-    || (
-      Logger.warn "recv_timeout not configured, default: #{@default_recv_timeout}";
-      @default_recv_timeout
-    )
+  @conn_timeout Application.get_env(@app, __MODULE__)[:conn_timeout] || (
+    Logger.warn "conn_timeout: not configured, default: #{@default_conn_timeout}";
+    @default_conn_timeout
+  )
+  @recv_timeout Application.get_env(@app, __MODULE__)[:recv_timeout] || (
+    Logger.warn "recv_timeout: not configured, default: #{@default_recv_timeout}";
+    @default_recv_timeout
+  )
 
 
   defmodule Request do
@@ -69,7 +66,11 @@ defmodule DexyPluginHTTP do
   defp do_request state, url, method do
     req_struct(url, method, state) |> @adapter.request |> case do
       {:ok, res} -> {state, res}
-      {:error, reason} -> do_response %{state | opts: %{"code" => 400}}, reason
+      {:error, :timeout} ->
+        {state, %{"code"=>408, "body"=>"timeout", "header"=>%{}}}
+      {:error, reason} = err ->
+        Logger.warn "do_request: #{inspect err}"
+        {state, %{"code"=>500, "body"=>inspect(reason), "header"=>%{}}}
     end
   end
 

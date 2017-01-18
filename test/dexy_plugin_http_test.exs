@@ -52,11 +52,22 @@ defmodule DexyPluginHTTPTest do
 
   test "gun -> request" do
     req = %HTTP.Request{
-      method: "get",
+      method: "GET",
       url: "http://www.example.com",
     }
-    res = HTTP.Adapters.Gun.request req
-    IO.inspect res: res
+    assert {_, %{"code"=>code}} = HTTP.Adapters.Gun.request req
+    IO.inspect code: code
+  end
+
+  test "gun -> server timeout" do
+    req = %HTTP.Request{
+      method: "GET",
+      url: "http://www.example.com",
+      options: %{
+        conn_timeout: 100
+      }
+    }
+    assert {:error, :timeout} == HTTP.Adapters.Gun.request req
   end
 
 end
